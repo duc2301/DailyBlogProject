@@ -1,6 +1,6 @@
 import Navbar from '../../Components/Navbar'
 
-  const index = () => {
+  const Index = () => {
     return (
       <div >
         <div className="relative h-[700px]">
@@ -19,4 +19,4 @@ import Navbar from '../../Components/Navbar'
   };
 
 
-  export default index
+  export default Index
