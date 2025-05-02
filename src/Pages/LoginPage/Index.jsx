@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import api from '../../Config/axios'
 import { toast } from 'react-toastify'
+import { GoogleLogin } from '@react-oauth/google';
+// import { useGoogleLogin } from '@react-oauth/google'
 
 const Index = () => {
   const [accountName, setAccountName] = useState('')
@@ -19,8 +21,11 @@ const Index = () => {
       })
 
       if (response.data.isSuccess) {
+        const data = await response.data;
+        localStorage.setItem('user', JSON.stringify(data.results));
+        localStorage.setItem('token', JSON.stringify(data.results.token));
         navigate('/');
-        toast.success(response.data.message)
+        console.log(data.results);
       } else {
         toast.error(response.data.message);
       }
@@ -28,6 +33,46 @@ const Index = () => {
       toast.error(error.response.data.message)
     }
   }
+
+  const handleLoginGoogle = async (credentialResponse) => {
+    console.log("Credential Response:", credentialResponse); // Log để kiểm tra cấu trúc
+    
+    // Lấy access_token từ credentialResponse
+    const IdToken = credentialResponse?.credential; // Dùng access_token thay vì idToken
+    
+    if (!IdToken) {
+      toast.error('Google login failed: No token received');
+      return;
+    }
+  
+    try {
+      console.log("Access Token:", IdToken); // Kiểm tra giá trị của accessToken
+  
+      // Gửi access_token lên server để xác thực
+      const response = await api.post(`Login/loginGoogle?idToken=${IdToken}`);
+  
+      if (response.data.isSuccess) {
+        const data = response.data;
+        localStorage.setItem('user', JSON.stringify(data.results));
+        localStorage.setItem('token', JSON.stringify(data.results.token));
+        navigate('/');
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error('Google login failed');
+    }
+  };
+
+  // const loginGoogle = useGoogleLogin({
+  //   onSuccess: handleLoginGoogle,
+  //   onError: () => toast.error('Google login failed'),
+  //   flow: 'implicit',  // Đảm bảo sử dụng flow implicit để nhận được idToken
+  // });
+  
+
+  
 
   return (
     <div className='bg-[#686279] min-h-screen flex justify-center items-center inset-0 fixed'>
@@ -78,13 +123,10 @@ const Index = () => {
           </div>
 
           <div className='flex gap-4 justify-center'>
-            <button className='bg-black text-white px-4 py-2 rounded flex items-center gap-2'>
-              <img
-                src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/36px-Google_%22G%22_logo.svg.png'
-                className='w-5 h-5'
-              />
-              Google
-            </button>
+            <GoogleLogin
+              onSuccess={handleLoginGoogle}
+              onError={() => toast.error("Google login failed")}
+            />
             <button className='bg-black text-white px-4 py-2 rounded flex items-center gap-2'>
               <img
                 src='https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/1200px-Octicons-mark-github.svg.png'
@@ -92,7 +134,8 @@ const Index = () => {
               />
               Github
             </button>
-          </div>~
+          </div>
+
         </div>
       </div>
     </div>
